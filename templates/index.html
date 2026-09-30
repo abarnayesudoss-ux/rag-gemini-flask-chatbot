@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ chatbot_title }}</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef4ff,#f8f2ff);display:flex;justify-content:center;align-items:center;padding:18px}.app{width:min(1000px,100%);height:min(760px,95vh);background:#fff;border-radius:28px;box-shadow:0 20px 60px #0002;overflow:hidden;display:flex;flex-direction:column}header{padding:22px 26px;color:#fff;background:linear-gradient(135deg,#4f46e5,#7c3aed)}header h1{margin:0;font-size:22px}header p{margin:7px 0 0;opacity:.86}.toolbar{display:flex;gap:10px;padding:14px 18px;border-bottom:1px solid #eee;background:#fafaff}.file{flex:1;border:1px dashed #b9b7d8;border-radius:12px;padding:10px;background:#fff}.upload{border:0;border-radius:12px;padding:0 16px;background:#5b4be7;color:#fff;font-weight:bold;cursor:pointer}#status{padding:0 18px;font-size:12px;color:#666}#chat{flex:1;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:13px}.message{max-width:78%;padding:13px 16px;border-radius:18px;line-height:1.5;white-space:pre-wrap}.bot{align-self:flex-start;background:#f0f2f7}.user{align-self:flex-end;background:#5b4be7;color:#fff}form{display:flex;gap:10px;padding:18px;border-top:1px solid #eee}input[type=text]{flex:1;padding:14px;border:1px solid #d8dbea;border-radius:16px;outline:0;font-size:15px}button.send{border:0;border-radius:16px;padding:0 22px;background:#5b4be7;color:#fff;font-weight:bold}@media(max-width:600px){.toolbar{flex-wrap:wrap}.file{width:100%;flex:auto}.upload{height:42px}.message{max-width:88%}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>✦ {{ chatbot_title }}</h1><p>Upload study documents and ask questions from them.</p></header>
+<div class="toolbar">
+<input class="file" id="fileInput" type="file" accept=".pdf,.docx,.txt">
+<button class="upload" id="uploadButton" type="button">Upload & Index</button>
+</div>
+<div id="status">Supported: PDF, DOCX, TXT</div>
+<main id="chat"><div class="message bot">Hello! Upload a study document, then ask a question about it.</div></main>
+<form id="chatForm"><input id="messageInput" type="text" placeholder="Ask a study question..." autocomplete="off"><button class="send" type="submit">Send</button></form>
+</div>
+<script>
+const chat=document.getElementById("chat"),input=document.getElementById("messageInput"),form=document.getElementById("chatForm"),status=document.getElementById("status"),fileInput=document.getElementById("fileInput"),uploadButton=document.getElementById("uploadButton");
+function addMessage(text,type){const e=document.createElement("div");e.className="message "+type;e.textContent=text;chat.appendChild(e);chat.scrollTop=chat.scrollHeight}
+uploadButton.onclick=async()=>{const file=fileInput.files[0];if(!file){status.textContent="Select a PDF, DOCX or TXT file first.";return}uploadButton.disabled=true;status.textContent="Indexing document...";const fd=new FormData();fd.append("file",file);try{const r=await fetch("/upload",{method:"POST",body:fd});const d=await r.json();status.textContent=d.message}catch(e){status.textContent="Upload failed."}finally{uploadButton.disabled=false}};
+form.onsubmit=async e=>{e.preventDefault();const message=input.value.trim();if(!message)return;addMessage(message,"user");input.value="";try{const r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message})});const d=await r.json();addMessage(d.reply||"No response.","bot")}catch(e){addMessage("Unable to connect to the chatbot.","bot")}};
+</script>
+</body>
+</html>
